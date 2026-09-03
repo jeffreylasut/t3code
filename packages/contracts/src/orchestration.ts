@@ -593,6 +593,19 @@ export const OrchestrationThreadShell = Schema.Struct({
   hasPendingUserInput: Schema.Boolean,
   hasActionableProposedPlan: Schema.Boolean,
   /**
+   * Latest known context-window reading, folded in from the thread's
+   * `context-window.updated` activities. Optional so old servers/clients
+   * interop; absent/null = no reading seen yet.
+   */
+  contextWindow: Schema.optional(
+    Schema.NullOr(
+      Schema.Struct({
+        usedTokens: NonNegativeInt,
+        maxTokens: Schema.NullOr(NonNegativeInt),
+      }),
+    ),
+  ),
+  /**
    * Native background work alive after the turn settles: "working" while
    * subagents/workflows run, "monitoring" when watch loops are the only
    * live work. Optional so old servers/clients interop; absent = none.

@@ -58,6 +58,8 @@ const makeProjectionThreadRepository = Effect.gen(function* () {
           pending_approval_count,
           pending_user_input_count,
           has_actionable_proposed_plan,
+          context_window_used_tokens,
+          context_window_max_tokens,
           deleted_at
         )
         VALUES (
@@ -87,6 +89,8 @@ const makeProjectionThreadRepository = Effect.gen(function* () {
           ${row.pendingApprovalCount},
           ${row.pendingUserInputCount},
           ${row.hasActionableProposedPlan},
+          ${row.contextWindowUsedTokens},
+          ${row.contextWindowMaxTokens},
           ${row.deletedAt}
         )
         ON CONFLICT (thread_id)
@@ -116,6 +120,8 @@ const makeProjectionThreadRepository = Effect.gen(function* () {
           pending_approval_count = excluded.pending_approval_count,
           pending_user_input_count = excluded.pending_user_input_count,
           has_actionable_proposed_plan = excluded.has_actionable_proposed_plan,
+          context_window_used_tokens = excluded.context_window_used_tokens,
+          context_window_max_tokens = excluded.context_window_max_tokens,
           deleted_at = excluded.deleted_at
       `,
   });
@@ -152,6 +158,8 @@ const makeProjectionThreadRepository = Effect.gen(function* () {
           pending_approval_count AS "pendingApprovalCount",
           pending_user_input_count AS "pendingUserInputCount",
           has_actionable_proposed_plan AS "hasActionableProposedPlan",
+          context_window_used_tokens AS "contextWindowUsedTokens",
+          context_window_max_tokens AS "contextWindowMaxTokens",
           deleted_at AS "deletedAt"
         FROM projection_threads
         WHERE thread_id = ${threadId}
@@ -190,6 +198,8 @@ const makeProjectionThreadRepository = Effect.gen(function* () {
           pending_approval_count AS "pendingApprovalCount",
           pending_user_input_count AS "pendingUserInputCount",
           has_actionable_proposed_plan AS "hasActionableProposedPlan",
+          context_window_used_tokens AS "contextWindowUsedTokens",
+          context_window_max_tokens AS "contextWindowMaxTokens",
           deleted_at AS "deletedAt"
         FROM projection_threads
         WHERE project_id = ${projectId}

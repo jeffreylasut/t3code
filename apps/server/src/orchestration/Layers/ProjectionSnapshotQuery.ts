@@ -324,6 +324,15 @@ function mapTitleRegeneration(row: Schema.Schema.Type<typeof ProjectionThreadDbR
     : null;
 }
 
+function mapContextWindow(row: Schema.Schema.Type<typeof ProjectionThreadDbRowSchema>) {
+  return row.contextWindowUsedTokens === null
+    ? null
+    : {
+        usedTokens: row.contextWindowUsedTokens,
+        maxTokens: row.contextWindowMaxTokens,
+      };
+}
+
 function mapSessionRow(
   row: Schema.Schema.Type<typeof ProjectionThreadSessionDbRowSchema>,
 ): OrchestrationSession {
@@ -488,6 +497,8 @@ const makeProjectionSnapshotQuery = Effect.gen(function* () {
           pending_approval_count AS "pendingApprovalCount",
           pending_user_input_count AS "pendingUserInputCount",
           has_actionable_proposed_plan AS "hasActionableProposedPlan",
+          context_window_used_tokens AS "contextWindowUsedTokens",
+          context_window_max_tokens AS "contextWindowMaxTokens",
           deleted_at AS "deletedAt"
         FROM projection_threads
         ORDER BY created_at ASC, thread_id ASC
@@ -526,6 +537,8 @@ const makeProjectionSnapshotQuery = Effect.gen(function* () {
           pending_approval_count AS "pendingApprovalCount",
           pending_user_input_count AS "pendingUserInputCount",
           has_actionable_proposed_plan AS "hasActionableProposedPlan",
+          context_window_used_tokens AS "contextWindowUsedTokens",
+          context_window_max_tokens AS "contextWindowMaxTokens",
           deleted_at AS "deletedAt"
         FROM projection_threads
         WHERE deleted_at IS NULL
@@ -566,6 +579,8 @@ const makeProjectionSnapshotQuery = Effect.gen(function* () {
           pending_approval_count AS "pendingApprovalCount",
           pending_user_input_count AS "pendingUserInputCount",
           has_actionable_proposed_plan AS "hasActionableProposedPlan",
+          context_window_used_tokens AS "contextWindowUsedTokens",
+          context_window_max_tokens AS "contextWindowMaxTokens",
           deleted_at AS "deletedAt"
         FROM projection_threads
         WHERE deleted_at IS NULL
@@ -1028,6 +1043,8 @@ const makeProjectionSnapshotQuery = Effect.gen(function* () {
           pending_approval_count AS "pendingApprovalCount",
           pending_user_input_count AS "pendingUserInputCount",
           has_actionable_proposed_plan AS "hasActionableProposedPlan",
+          context_window_used_tokens AS "contextWindowUsedTokens",
+          context_window_max_tokens AS "contextWindowMaxTokens",
           deleted_at AS "deletedAt"
         FROM projection_threads
         WHERE thread_id = ${threadId}
@@ -2280,6 +2297,7 @@ pending_approval_requests AS (
                       hasPendingApprovals: row.pendingApprovalCount > 0,
                       hasPendingUserInput: row.pendingUserInputCount > 0,
                       hasActionableProposedPlan: row.hasActionableProposedPlan > 0,
+                      contextWindow: mapContextWindow(row),
                       backgroundLiveness: threadBackgroundLiveness.getThreadBackgroundLiveness(
                         row.threadId,
                       ),
@@ -2428,6 +2446,7 @@ pending_approval_requests AS (
                 hasPendingApprovals: row.pendingApprovalCount > 0,
                 hasPendingUserInput: row.pendingUserInputCount > 0,
                 hasActionableProposedPlan: row.hasActionableProposedPlan > 0,
+                contextWindow: mapContextWindow(row),
                 backgroundLiveness: threadBackgroundLiveness.getThreadBackgroundLiveness(
                   row.threadId,
                 ),
@@ -2722,6 +2741,7 @@ pending_approval_requests AS (
         hasPendingApprovals: threadRow.value.pendingApprovalCount > 0,
         hasPendingUserInput: threadRow.value.pendingUserInputCount > 0,
         hasActionableProposedPlan: threadRow.value.hasActionableProposedPlan > 0,
+        contextWindow: mapContextWindow(threadRow.value),
         backgroundLiveness: threadBackgroundLiveness.getThreadBackgroundLiveness(
           threadRow.value.threadId,
         ),

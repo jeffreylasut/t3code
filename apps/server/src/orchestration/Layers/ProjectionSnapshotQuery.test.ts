@@ -436,6 +436,7 @@ projectionSnapshotLayer("ProjectionSnapshotQuery", (it) => {
           interactionMode: "default",
           runtimeMode: "full-access",
           branch: null,
+          contextWindow: null,
           worktreePath: null,
           linkedPullRequest: {
             projectId: asProjectId("project-1"),

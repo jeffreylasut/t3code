@@ -52,6 +52,13 @@ export const ProjectionThread = Schema.Struct({
   pendingApprovalCount: NonNegativeInt,
   pendingUserInputCount: NonNegativeInt,
   hasActionableProposedPlan: NonNegativeInt,
+  /**
+   * Latest known context-window reading, folded in from the thread's
+   * `context-window.updated` activities. Independent nullability: a thread
+   * can have used tokens without a known max (some providers omit it).
+   */
+  contextWindowUsedTokens: Schema.NullOr(NonNegativeInt),
+  contextWindowMaxTokens: Schema.NullOr(NonNegativeInt),
   deletedAt: Schema.NullOr(IsoDateTime),
 });
 export type ProjectionThread = typeof ProjectionThread.Type;

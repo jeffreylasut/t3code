@@ -149,6 +149,38 @@ function shouldRefreshThreadShellSummary(event: OrchestrationEvent): boolean {
   }
 }
 
+/**
+ * Folds a `context-window.updated` activity's `usedTokens`/`maxTokens` into
+ * the thread projection row, mirroring the validity rule in the web client's
+ * `deriveLatestContextWindowSnapshot`: a row without a finite, non-negative
+ * `usedTokens` is not a resolvable reading and must not overwrite the last
+ * known one.
+ */
+function deriveContextWindowUpdate(
+  event: OrchestrationEvent,
+): { contextWindowUsedTokens: number; contextWindowMaxTokens: number | null } | null {
+  if (event.type !== "thread.activity-appended") {
+    return null;
+  }
+  if (event.payload.activity.kind !== "context-window.updated") {
+    return null;
+  }
+  const payload = event.payload.activity.payload;
+  const data = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : null;
+  const usedTokens = data?.["usedTokens"];
+  if (typeof usedTokens !== "number" || !Number.isFinite(usedTokens) || usedTokens < 0) {
+    return null;
+  }
+  const maxTokens = data?.["maxTokens"];
+  return {
+    contextWindowUsedTokens: usedTokens,
+    contextWindowMaxTokens:
+      typeof maxTokens === "number" && Number.isFinite(maxTokens) && maxTokens >= 0
+        ? maxTokens
+        : null,
+  };
+}
+
 function derivePendingUserInputCountFromActivities(
   activities: ReadonlyArray<ProjectionThreadActivity>,
 ): number {
@@ -654,6 +686,8 @@ const makeOrchestrationProjectionPipeline = Effect.fn("makeOrchestrationProjecti
             pendingApprovalCount: 0,
             pendingUserInputCount: 0,
             hasActionableProposedPlan: 0,
+            contextWindowUsedTokens: null,
+            contextWindowMaxTokens: null,
             deletedAt: null,
           });
           return;
@@ -935,6 +969,7 @@ const makeOrchestrationProjectionPipeline = Effect.fn("makeOrchestrationProjecti
           yield* projectionThreadRepository.upsert({
             ...existingRow.value,
             updatedAt: event.occurredAt,
+            ...deriveContextWindowUpdate(event),
           });
           if (shouldRefreshThreadShellSummary(event)) {
             yield* refreshThreadShellSummary(event.payload.threadId);
