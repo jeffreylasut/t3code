@@ -207,6 +207,7 @@ import {
   ResourceTelemetrySnapshot,
 } from "./resourceTelemetry.ts";
 import { UsagePricing, UsageReadError, UsageSummary, UsageSummaryInput } from "./usage.ts";
+import { ProviderRateLimitHistory, ProviderRateLimitHistoryInput } from "./providerRateLimits.ts";
 import { ServerSettings, ServerSettingsError, ServerSettingsPatch } from "./settings.ts";
 import {
   SourceControlCloneRepositoryInput,
@@ -316,6 +317,7 @@ export const WS_METHODS = {
   serverGetBackgroundPolicy: "server.getBackgroundPolicy",
   serverGetUsageSummary: "server.getUsageSummary",
   serverRefreshUsageRates: "server.refreshUsageRates",
+  serverGetProviderRateLimitHistory: "server.getProviderRateLimitHistory",
 
   // Cloud environment methods
   cloudGetRelayClientStatus: "cloud.getRelayClientStatus",
@@ -557,6 +559,16 @@ export const WsServerRefreshUsageRatesRpc = Rpc.make(WS_METHODS.serverRefreshUsa
   success: UsagePricing,
   error: EnvironmentAuthorizationError,
 });
+
+/** Reads persisted rate-limit history for one configured provider instance. */
+export const WsServerGetProviderRateLimitHistoryRpc = Rpc.make(
+  WS_METHODS.serverGetProviderRateLimitHistory,
+  {
+    payload: ProviderRateLimitHistoryInput,
+    success: ProviderRateLimitHistory,
+    error: EnvironmentAuthorizationError,
+  },
+);
 
 export const WsServerSignalProcessRpc = Rpc.make(WS_METHODS.serverSignalProcess, {
   payload: ServerSignalProcessInput,
@@ -1179,6 +1191,7 @@ export const WsRpcGroup = RpcGroup.make(
   WsServerRetryResourceTelemetryRpc,
   WsServerGetUsageSummaryRpc,
   WsServerRefreshUsageRatesRpc,
+  WsServerGetProviderRateLimitHistoryRpc,
   WsServerSignalProcessRpc,
   WsServerReportClientActivityRpc,
   WsServerReportHostPowerStateRpc,
