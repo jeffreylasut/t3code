@@ -35,6 +35,7 @@ import * as TestClock from "effect/testing/TestClock";
 import { attachmentRelativePath } from "../../attachmentStore.ts";
 import { ServerConfig } from "../../config.ts";
 import { ServerSettingsService } from "../../serverSettings.ts";
+import * as ProviderRateLimitSnapshots from "../../persistence/ProviderRateLimitSnapshots.ts";
 import {
   SYNTHETIC_CLAUDE_CAPABLE_MODEL,
   SYNTHETIC_CLAUDE_COLLIDING_ALIAS,
@@ -206,6 +207,7 @@ function makeHarness(config?: {
         ),
       ),
       Layer.provideMerge(ServerSettingsService.layerTest()),
+      Layer.provideMerge(ProviderRateLimitSnapshots.layerTest),
       Layer.provideMerge(NodeServices.layer),
     ),
     query,
@@ -346,6 +348,7 @@ describe("ClaudeAdapterLive", () => {
     ).pipe(
       Layer.provideMerge(ServerConfig.layerTest("/tmp/claude-adapter-test", "/tmp")),
       Layer.provideMerge(ServerSettingsService.layerTest()),
+      Layer.provideMerge(ProviderRateLimitSnapshots.layerTest),
       Layer.provideMerge(NodeServices.layer),
     );
 
@@ -2133,6 +2136,7 @@ describe("ClaudeAdapterLive", () => {
     ).pipe(
       Layer.provideMerge(ServerConfig.layerTest("/tmp/claude-adapter-test", "/tmp")),
       Layer.provideMerge(ServerSettingsService.layerTest()),
+      Layer.provideMerge(ProviderRateLimitSnapshots.layerTest),
       Layer.provideMerge(NodeServices.layer),
     );
 
@@ -2751,6 +2755,7 @@ describe("ClaudeAdapterLive", () => {
     ).pipe(
       Layer.provideMerge(ServerConfig.layerTest("/tmp/claude-adapter-test", "/tmp")),
       Layer.provideMerge(ServerSettingsService.layerTest()),
+      Layer.provideMerge(ProviderRateLimitSnapshots.layerTest),
       Layer.provideMerge(NodeServices.layer),
     );
 
@@ -2842,6 +2847,7 @@ describe("ClaudeAdapterLive", () => {
     ).pipe(
       Layer.provideMerge(ServerConfig.layerTest("/tmp/claude-adapter-test", "/tmp")),
       Layer.provideMerge(ServerSettingsService.layerTest()),
+      Layer.provideMerge(ProviderRateLimitSnapshots.layerTest),
       Layer.provideMerge(NodeServices.layer),
     );
 

@@ -35,6 +35,32 @@ export type ProviderRateLimitRepositoryError = PersistenceSqlError | Persistence
 /** Longest history a client may request. Older rows still exist; callers just can't ask for them. */
 const MAX_HISTORY_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
+/**
+ * Providers are inconsistent about whether "used" is a 0..1 fraction (Claude's
+ * `utilization`) or a 0..100 integer (Codex's `usedPercent`). Neither SDK
+ * documents the convention in a machine-checkable way, so this treats
+ * anything at or below 1 as a fraction — a provider genuinely at exactly 1%
+ * used is indistinguishable from 100% as a fraction, but that boundary is
+ * far more likely to be "just started, ~0-1% used" in practice.
+ */
+export function normalizeRateLimitPercent(value: number | null | undefined): number | null {
+  if (value === null || value === undefined || !Number.isFinite(value)) return null;
+  return value <= 1 ? value * 100 : value;
+}
+
+/**
+ * Providers are similarly inconsistent about unix seconds vs milliseconds.
+ * Treated as seconds below this threshold (year ~2286 in milliseconds, but
+ * year ~5138 in seconds) — comfortably past any real reset timestamp either
+ * way, so genuine values never round-trip through the wrong branch.
+ */
+const SECONDS_MS_THRESHOLD = 10_000_000_000;
+
+export function normalizeRateLimitEpochMs(value: number | null | undefined): number | null {
+  if (value === null || value === undefined || !Number.isFinite(value)) return null;
+  return value < SECONDS_MS_THRESHOLD ? value * 1000 : value;
+}
+
 export interface RecordProviderRateLimitSnapshotInput {
   readonly providerInstanceId: ProviderInstanceId;
   readonly driver: string;

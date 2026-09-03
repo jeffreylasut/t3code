@@ -77,6 +77,11 @@ import * as Stream from "effect/Stream";
 
 import { resolveAttachmentPath } from "../../attachmentStore.ts";
 import { ServerConfig } from "../../config.ts";
+import {
+  normalizeRateLimitEpochMs,
+  normalizeRateLimitPercent,
+  ProviderRateLimitSnapshotRepository,
+} from "../../persistence/ProviderRateLimitSnapshots.ts";
 import * as McpProviderSession from "../../mcp/McpProviderSession.ts";
 import { resolveClaudeSdkExecutablePath } from "../Drivers/ClaudeExecutable.ts";
 import { makeClaudeEnvironment } from "../Drivers/ClaudeHome.ts";
@@ -1730,6 +1735,7 @@ export const makeClaudeAdapter = Effect.fn("makeClaudeAdapter")(function* (
   const path = yield* Path.Path;
   const serverConfig = yield* ServerConfig;
   const crypto = yield* Crypto.Crypto;
+  const providerRateLimits = yield* ProviderRateLimitSnapshotRepository;
   const claudeEnvironment = yield* makeClaudeEnvironment(claudeSettings, options?.environment).pipe(
     Effect.provideService(Path.Path, path),
   );
@@ -3595,6 +3601,29 @@ export const makeClaudeAdapter = Effect.fn("makeClaudeAdapter")(function* (
     }
 
     if (message.type === "rate_limit_event") {
+      const info = message.rate_limit_info;
+      const instanceId = context.session.providerInstanceId;
+      if (instanceId !== undefined) {
+        const capturedAtMs = yield* Effect.map(DateTime.now, DateTime.toEpochMillis);
+        // A history-write hiccup must not drop the live push clients are
+        // already waiting on: record best-effort alongside it, not in front.
+        yield* providerRateLimits
+          .record({
+            providerInstanceId: instanceId,
+            driver: PROVIDER,
+            windowKey: info.rateLimitType ?? "unknown",
+            status: info.status ?? null,
+            usedPercent: normalizeRateLimitPercent(info.utilization),
+            resetsAtMs: normalizeRateLimitEpochMs(info.resetsAt ?? null),
+            capturedAtMs,
+            raw: info,
+          })
+          .pipe(
+            Effect.catchCause((cause) =>
+              Effect.logWarning("claude.rate-limit.record-failed", { cause }),
+            ),
+          );
+      }
       yield* offerRuntimeEvent({
         ...base,
         type: "account.rate-limits.updated",
