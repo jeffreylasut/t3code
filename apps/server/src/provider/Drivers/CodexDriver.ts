@@ -33,6 +33,7 @@ import { ChildProcessSpawner } from "effect/unstable/process";
 import { makeCodexTextGeneration } from "../../textGeneration/CodexTextGeneration.ts";
 import * as BackgroundPolicy from "../../background/BackgroundPolicy.ts";
 import { ServerConfig } from "../../config.ts";
+import { ProviderRateLimitSnapshotRepository } from "../../persistence/ProviderRateLimitSnapshots.ts";
 import { ServerSettingsService } from "../../serverSettings.ts";
 import { ProviderDriverError } from "../Errors.ts";
 import { makeCodexAdapter } from "../Layers/CodexAdapter.ts";
@@ -87,6 +88,7 @@ export type CodexDriverEnv =
   | ModelManifest.ModelManifest
   | Path.Path
   | ProviderEventLoggers
+  | ProviderRateLimitSnapshotRepository
   | ServerConfig
   | ServerSettingsService;
 

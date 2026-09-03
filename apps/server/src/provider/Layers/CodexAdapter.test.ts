@@ -37,6 +37,7 @@ import * as CodexErrors from "effect-codex-app-server/errors";
 
 import { ServerConfig } from "../../config.ts";
 import { ServerSettingsService } from "../../serverSettings.ts";
+import * as ProviderRateLimitSnapshots from "../../persistence/ProviderRateLimitSnapshots.ts";
 import { ProviderAdapterValidationError } from "../Errors.ts";
 import type { CodexAdapterShape } from "../Services/CodexAdapter.ts";
 import { ProviderSessionDirectory } from "../Services/ProviderSessionDirectory.ts";
@@ -240,6 +241,7 @@ const validationLayer = it.layer(
   ).pipe(
     Layer.provideMerge(ServerConfig.layerTest(process.cwd(), process.cwd())),
     Layer.provideMerge(ServerSettingsService.layerTest()),
+    Layer.provideMerge(ProviderRateLimitSnapshots.layerTest),
     Layer.provideMerge(providerSessionDirectoryTestLayer),
     Layer.provideMerge(NodeServices.layer),
   ),
@@ -310,6 +312,7 @@ const sessionErrorLayer = it.layer(
   ).pipe(
     Layer.provideMerge(ServerConfig.layerTest(process.cwd(), process.cwd())),
     Layer.provideMerge(ServerSettingsService.layerTest()),
+    Layer.provideMerge(ProviderRateLimitSnapshots.layerTest),
     Layer.provideMerge(providerSessionDirectoryTestLayer),
     Layer.provideMerge(NodeServices.layer),
   ),
@@ -416,6 +419,7 @@ sessionErrorLayer("CodexAdapterLive session errors", (it) => {
     ).pipe(
       Layer.provideMerge(ServerConfig.layerTest(process.cwd(), process.cwd())),
       Layer.provideMerge(ServerSettingsService.layerTest()),
+      Layer.provideMerge(ProviderRateLimitSnapshots.layerTest),
       Layer.provideMerge(providerSessionDirectoryTestLayer),
       Layer.provideMerge(NodeServices.layer),
     );
@@ -448,6 +452,7 @@ sessionErrorLayer("CodexAdapterLive session errors", (it) => {
     ).pipe(
       Layer.provideMerge(ServerConfig.layerTest(process.cwd(), process.cwd())),
       Layer.provideMerge(ServerSettingsService.layerTest()),
+      Layer.provideMerge(ProviderRateLimitSnapshots.layerTest),
       Layer.provideMerge(providerSessionDirectoryTestLayer),
       Layer.provideMerge(NodeServices.layer),
     );
@@ -481,6 +486,7 @@ sessionErrorLayer("CodexAdapterLive session errors", (it) => {
     ).pipe(
       Layer.provideMerge(ServerConfig.layerTest(process.cwd(), process.cwd())),
       Layer.provideMerge(ServerSettingsService.layerTest()),
+      Layer.provideMerge(ProviderRateLimitSnapshots.layerTest),
       Layer.provideMerge(providerSessionDirectoryTestLayer),
       Layer.provideMerge(NodeServices.layer),
     );
@@ -535,6 +541,7 @@ const lifecycleLayer = it.layer(
   ).pipe(
     Layer.provideMerge(ServerConfig.layerTest(process.cwd(), process.cwd())),
     Layer.provideMerge(ServerSettingsService.layerTest()),
+    Layer.provideMerge(ProviderRateLimitSnapshots.layerTest),
     Layer.provideMerge(providerSessionDirectoryTestLayer),
     Layer.provideMerge(NodeServices.layer),
   ),
@@ -1783,6 +1790,7 @@ const scopedLifecycleLayer = it.layer(
   ).pipe(
     Layer.provideMerge(ServerConfig.layerTest(process.cwd(), process.cwd())),
     Layer.provideMerge(ServerSettingsService.layerTest()),
+    Layer.provideMerge(ProviderRateLimitSnapshots.layerTest),
     Layer.provideMerge(providerSessionDirectoryTestLayer),
     Layer.provideMerge(NodeServices.layer),
   ),
@@ -1827,6 +1835,7 @@ const scopedFailureLayer = it.layer(
   ).pipe(
     Layer.provideMerge(ServerConfig.layerTest(process.cwd(), process.cwd())),
     Layer.provideMerge(ServerSettingsService.layerTest()),
+    Layer.provideMerge(ProviderRateLimitSnapshots.layerTest),
     Layer.provideMerge(providerSessionDirectoryTestLayer),
     Layer.provideMerge(NodeServices.layer),
   ),
@@ -1879,6 +1888,7 @@ it.effect("flushes managed native logs when the adapter layer shuts down", () =>
       ).pipe(
         Layer.provideMerge(ServerConfig.layerTest(process.cwd(), process.cwd())),
         Layer.provideMerge(ServerSettingsService.layerTest()),
+        Layer.provideMerge(ProviderRateLimitSnapshots.layerTest),
         Layer.provideMerge(providerSessionDirectoryTestLayer),
         Layer.provideMerge(NodeServices.layer),
       );

@@ -32,6 +32,7 @@ import {
 import * as Effect from "effect/Effect";
 import * as NodeCrypto from "node:crypto";
 import * as Crypto from "effect/Crypto";
+import * as DateTime from "effect/DateTime";
 import * as Exit from "effect/Exit";
 import * as Fiber from "effect/Fiber";
 import * as FileSystem from "effect/FileSystem";
@@ -58,6 +59,11 @@ import {
 import { type CodexAdapterShape } from "../Services/CodexAdapter.ts";
 import { resolveAttachmentPath } from "../../attachmentStore.ts";
 import { ServerConfig } from "../../config.ts";
+import {
+  normalizeRateLimitEpochMs,
+  normalizeRateLimitPercent,
+  ProviderRateLimitSnapshotRepository,
+} from "../../persistence/ProviderRateLimitSnapshots.ts";
 import {
   CodexResumeCursorSchema,
   CodexSessionRuntimeThreadIdMissingError,
@@ -148,6 +154,56 @@ function readPayload<A>(
   const isPayload = Schema.is(schema);
   return isPayload(payload) ? payload : undefined;
 }
+
+/**
+ * Codex reports up to two windows (`primary`/`secondary`, e.g. a short and a
+ * weekly window) in one `account/rateLimits/updated` notification. Records
+ * whichever are present; a persistence failure logs a warning instead of
+ * interrupting the caller, matching the best-effort recording on the Claude
+ * side.
+ */
+const recordCodexRateLimits = Effect.fn("recordCodexRateLimits")(function* (
+  providerRateLimits: ProviderRateLimitSnapshotRepository["Service"],
+  providerInstanceId: ProviderInstanceId,
+  event: ProviderEvent,
+) {
+  const payload = readPayload(
+    EffectCodexSchema.V2AccountRateLimitsUpdatedNotification,
+    event.payload,
+  );
+  if (!payload) return;
+
+  const capturedAtMs = DateTime.toEpochMillis(DateTime.makeUnsafe(event.createdAt));
+  const windows: ReadonlyArray<
+    readonly [
+      string,
+      { readonly resetsAt?: number | null; readonly usedPercent: number } | null | undefined,
+    ]
+  > = [
+    ["primary", payload.rateLimits.primary],
+    ["secondary", payload.rateLimits.secondary],
+  ];
+
+  for (const [windowKey, window] of windows) {
+    if (!window) continue;
+    yield* providerRateLimits
+      .record({
+        providerInstanceId,
+        driver: PROVIDER,
+        windowKey,
+        status: null,
+        usedPercent: normalizeRateLimitPercent(window.usedPercent),
+        resetsAtMs: normalizeRateLimitEpochMs(window.resetsAt ?? null),
+        capturedAtMs,
+        raw: window,
+      })
+      .pipe(
+        Effect.catchCause((cause) =>
+          Effect.logWarning("codex.rate-limit.record-failed", { cause }),
+        ),
+      );
+  }
+});
 
 function trimText(value: string | undefined | null): string | undefined {
   const trimmed = value?.trim();
@@ -1962,6 +2018,7 @@ export const makeCodexAdapter = Effect.fn("makeCodexAdapter")(function* (
   const childProcessSpawner = yield* ChildProcessSpawner.ChildProcessSpawner;
   const crypto = yield* Crypto.Crypto;
   const serverConfig = yield* Effect.service(ServerConfig);
+  const providerRateLimits = yield* ProviderRateLimitSnapshotRepository;
   const nativeEventLogger =
     options?.nativeEventLogger ??
     (options?.nativeEventLogPath !== undefined
@@ -2054,6 +2111,9 @@ export const makeCodexAdapter = Effect.fn("makeCodexAdapter")(function* (
         const eventFiber = yield* Stream.runForEach(runtime.events, (event) =>
           Effect.gen(function* () {
             yield* writeNativeEvent(event);
+            if (event.method === "account/rateLimits/updated") {
+              yield* recordCodexRateLimits(providerRateLimits, boundInstanceId, event);
+            }
             const runtimeEvents = mapToRuntimeEvents(event, event.threadId);
             if (runtimeEvents.length === 0) {
               yield* Effect.logDebug("ignoring unhandled Codex provider event", {
