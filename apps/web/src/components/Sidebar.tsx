@@ -163,6 +163,7 @@ import {
   settledPrHoverColorClass,
   terminalStatusFromRunningIds,
   threadChangeRequestSnapshotsAtom,
+  ThreadContextWindowIndicator,
   type ThreadChangeRequestSnapshot,
   type TerminalStatusIndicator,
   useLinkedThreadPullRequest,
@@ -1243,6 +1244,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
       <TerminalIcon className={cn("size-3.5", terminalStatus.pulse && "animate-status-pulse")} />
     </span>
   ) : null;
+  const contextWindowIndicator = <ThreadContextWindowIndicator thread={thread} />;
   const pinIndicator = props.isPinned ? (
     props.pinningSupported ? (
       <Tooltip>
@@ -1313,6 +1315,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
             {title}
             {pinIndicator}
             {terminalStatusIcon}
+            {contextWindowIndicator}
             {isRegeneratingTitle ? (
               <span role="status" className="sr-only">
                 Regenerating title
@@ -1606,6 +1609,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
                 <span className="flex-1" />
               )}
               {terminalStatusIcon}
+              {contextWindowIndicator}
               {prBadge}
               {diff ? (
                 <span className="shrink-0 font-mono">

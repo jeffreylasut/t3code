@@ -661,3 +661,68 @@ export function ThreadRowTrailingStatus({ thread }: { thread: SidebarThreadSumma
     </span>
   );
 }
+
+const CONTEXT_WINDOW_RING_RADIUS = 6;
+const CONTEXT_WINDOW_RING_CIRCUMFERENCE = 2 * Math.PI * CONTEXT_WINDOW_RING_RADIUS;
+
+/**
+ * Row-scale version of the composer's `ContextWindowMeter`: a small static
+ * ring (no popover — the row is already dense) showing the thread's last
+ * known context-window usage. Absent entirely until a reading exists, so
+ * threads from before this field existed or from providers that never
+ * report it don't show an empty/misleading ring.
+ */
+export function ThreadContextWindowIndicator({ thread }: { thread: SidebarThreadSummary }) {
+  const contextWindow = thread.contextWindow;
+  if (!contextWindow || contextWindow.maxTokens === null || contextWindow.maxTokens === 0) {
+    return null;
+  }
+
+  const usedPercent = Math.max(
+    0,
+    Math.min(100, (contextWindow.usedTokens / contextWindow.maxTokens) * 100),
+  );
+  const dashOffset = CONTEXT_WINDOW_RING_CIRCUMFERENCE * (1 - usedPercent / 100);
+  const isNearLimit = usedPercent > 90;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <span
+            role="img"
+            aria-label={`Context window ${Math.round(usedPercent)}% used`}
+            className="inline-flex shrink-0 items-center justify-center"
+          />
+        }
+      >
+        <svg viewBox="0 0 16 16" className="-rotate-90 size-3 transform-gpu" aria-hidden="true">
+          <circle
+            cx="8"
+            cy="8"
+            r={CONTEXT_WINDOW_RING_RADIUS}
+            fill="none"
+            stroke="color-mix(in oklab, var(--color-muted-foreground) 24%, transparent)"
+            strokeWidth="2"
+          />
+          <circle
+            cx="8"
+            cy="8"
+            r={CONTEXT_WINDOW_RING_RADIUS}
+            fill="none"
+            stroke={
+              isNearLimit
+                ? "var(--color-error)"
+                : "color-mix(in oklab, var(--color-muted-foreground) 72%, transparent)"
+            }
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeDasharray={CONTEXT_WINDOW_RING_CIRCUMFERENCE}
+            strokeDashoffset={dashOffset}
+          />
+        </svg>
+      </TooltipTrigger>
+      <TooltipPopup side="top">Context window {Math.round(usedPercent)}% used</TooltipPopup>
+    </Tooltip>
+  );
+}
