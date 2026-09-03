@@ -874,6 +874,11 @@ export function createServerEnvironmentAtoms<R, E>(
       tag: WS_METHODS.serverGetResourceTelemetryHistory,
       staleTimeMs: 5_000,
     }),
+    providerRateLimitHistory: createEnvironmentRpcQueryAtomFamily(runtime, {
+      label: "environment-data:server:provider-rate-limit-history",
+      tag: WS_METHODS.serverGetProviderRateLimitHistory,
+      staleTimeMs: 5_000,
+    }),
     // A cold transcript scan is measured in seconds, so keep the result around
     // long enough that switching windows or re-rendering does not rescan.
     usageSummary: createEnvironmentRpcQueryAtomFamily(runtime, {

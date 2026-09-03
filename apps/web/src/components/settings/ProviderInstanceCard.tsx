@@ -28,6 +28,11 @@ import {
 import { cn } from "../../lib/utils";
 import { useCopyToClipboard } from "../../hooks/useCopyToClipboard";
 import { normalizeProviderAccentColor } from "../../providerInstances";
+import {
+  DEFAULT_RATE_LIMIT_HISTORY_WINDOW_MS,
+  useProviderRateLimitHistory,
+} from "../../lib/providerRateLimitState";
+import { ProviderRateLimitUsage } from "./ProviderRateLimitUsage";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { DraftInput } from "../ui/draft-input";
@@ -443,6 +448,10 @@ export function ProviderInstanceCard({
       : null;
   const versionLabel = getProviderVersionLabel(liveProvider?.version);
   const versionAdvisory = getProviderVersionAdvisoryPresentation(liveProvider?.versionAdvisory);
+  const rateLimitHistory = useProviderRateLimitHistory({
+    providerInstanceId: instanceId,
+    windowMs: DEFAULT_RATE_LIMIT_HISTORY_WINDOW_MS,
+  });
   const updateCommand = versionAdvisory?.updateCommand ?? null;
   const FallbackIconComponent = driverOption?.icon;
   const displayName =
@@ -791,6 +800,11 @@ export function ProviderInstanceCard({
             <p className="text-[13px] leading-[1.45] text-muted-foreground/80 [overflow-wrap:anywhere]">
               {summary.detail}
             </p>
+          ) : null}
+          {isAuthenticated && rateLimitHistory.data && rateLimitHistory.data.windows.length > 0 ? (
+            <div className="mt-2">
+              <ProviderRateLimitUsage windows={rateLimitHistory.data.windows} />
+            </div>
           ) : null}
         </div>
         {onDelete ? (
